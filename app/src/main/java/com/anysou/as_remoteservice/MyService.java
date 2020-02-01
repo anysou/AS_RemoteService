@@ -7,8 +7,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.Icon;
-import android.nfc.tech.NfcA;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -46,6 +44,7 @@ public class MyService extends Service {
         builder.setContentText("AIDL前台服务已启动！");    //设置通知的内容
         builder.setSmallIcon(R.drawable.service);        //设置通知的图标 //Android5.0及以上版本通知栏和状态栏不显示彩色图标而都是白色，简单粗暴的方法，降低sdk的目标版本小于21，将android:targetSdkVersion="19"，
         builder.setWhen(System.currentTimeMillis());     //设置时间,long类型自动转换
+        builder.setDefaults(Notification.DEFAULT_ALL);
 
         //兼容  API 16    android 4.1 Jelly Bean    果冻豆
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1){

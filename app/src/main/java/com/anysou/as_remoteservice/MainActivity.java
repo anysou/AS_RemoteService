@@ -8,6 +8,8 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 
@@ -56,6 +58,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+        Window win = getWindow();
+        win.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED //锁屏状态下显示
+                | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD //解锁
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON //保持屏幕长亮
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON); //打开屏幕
     }
 
     //启动服务
