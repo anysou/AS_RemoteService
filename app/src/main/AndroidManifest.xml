@@ -1,16 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.anysou.as_remoteservice">
 
     <!--android 9.0上使用前台服务，需要添加权限-->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!--监听开机权限-->
+    <!--监听开机权限,允许程序开机自动运行-->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+<!--    &lt;!&ndash;允许程序访问网络连接，可能产生GPRS流量&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.INTERNET"/>-->
+<!--    &lt;!&ndash;允许程序写入外部存储,如SD卡上写文件&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>-->
+<!--    &lt;!&ndash;允许程序获取网络信息状态，如当前的网络连接是否有效&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>-->
+<!--    &lt;!&ndash;允许程序重新启动设备&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.REBOOT"   tools:ignore="ProtectedPermissions" />-->
+<!--    &lt;!&ndash;允许程序访问电话状态&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>-->
+<!--    &lt;!&ndash;允许程序在手机屏幕关闭后后台进程仍然运行&ndash;&gt;-->
+<!--    <uses-permission android:name="android.permission.WAKE_LOCK"/>-->
 
     <!-- persistent="true" : 常驻应用 1)在系统刚起来的时候，该App也会被启动起来
             2)该App被强制杀掉后，系统会重启该App。这种情况只针对系统内置的App，第三方安装的App不会被重启。
     -->
     <application
+        android:name=".MainApplication"
         android:persistent="true"
         android:allowBackup="true"
         android:icon="@drawable/service"
@@ -18,6 +33,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <!--注册一个静态广播，并添加权限，实现开机自启动-->
+        <receiver android:name=".AutoReceiver" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
 
         <!--注册Service服务
         android:enabled="true"    //会被系统默认启动
@@ -29,25 +52,17 @@
             <!--对于intent-filter可以通过android:priority = "1000"这个属性设置最高优先级，1000是最高值，如果数字越小则优先级越低-->
             <intent-filter android:priority="1000">
                 <action android:name="com.anysou.as_remoteservice.MyAidlService"/>
-                <category android:name="android.intent.category.LAUNCHER" />
+                <!--category android:name="android.intent.category.LAUNCHER" /-->
             </intent-filter>
         </service>
 
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <!--category android:name="android.intent.category.LAUNCHER"/-->
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
-
-        <!--注册一个静态广播，并添加权限，实现开机自启动-->
-        <receiver android:name=".AutoReceiver" android:enabled="true" android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </receiver>
 
     </application>
 

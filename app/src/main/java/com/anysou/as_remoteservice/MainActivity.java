@@ -2,18 +2,31 @@ package com.anysou.as_remoteservice;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.ActivityManager;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Process;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import java.util.List;
+
 
 /***
+ * 本地服务 --local service：服务运行在当前的应用程序里面
+ * 远程服务 --remote service：服务运行在其他的应用程序里面
+ * * 进程：所谓的进程就是指系统给每一个应用程序分配的一块独立的内存工作空间
+ * * IPC：inter process communication  进程间通讯
+ * * AIDL：andrid interface definition language 安卓接口定义语言
+ *
  * 远程服务：使用 AIDL(Android Interfice Definition Language) 安卓接口定义语言进行 IPC(Inter Process Communication)跨进程通信。
  * Android：（本地、可通信的、前台、远程）Service使用全面介绍  https://www.jianshu.com/p/e04c4239b07e
  * Android调用远程服务中的方法（AIDL） https://blog.csdn.net/nongminkouhao/article/details/88984299
@@ -30,11 +43,9 @@ import android.widget.Toast;
  *     3）android:process=":remote" //设置进程名,名字可以任意字符串。:xxx表示是本包的私有进程。目的与Activity不是同一个进程。
  * 六、服务器本 APP的显示方式：
  *     方法一： 有 MainActivity 界面，有四个按键功能。
- *     方法二： 将 MyService 服务变成前台服务； 在onCreate() 添加 startForeground(1, notification);，有四个按键功能。
- *     方法三： 不要 MainActivity 界面，将 MyService服务 设置为启动项。同时安装后，在桌面上没有APP图标。启动需要靠客户端来通过 AIDL 启动。
- *     为什么要用方法三、方法三的实现方法：
- *     1）因为 MyService 是与 Activity 关联的，则 MyService 会随着 Activity 的销毁而销毁。容易中断服务。
- *     2）桌面上有APP图标，容易被删除 服务APP。
+ *     方法二： 将 MyService 服务变成“前台服务”； 在onCreate() 添加 startForeground(1, notification);，有四个按键功能。
+ *     方法三： 不显示 MainActivity Layout界面，完成 MyService 启动后，就关闭 finish Activity。
+ *             好处：不会因手动关闭 MainActivity 界面，而关闭服务。
  *
  *     实现方法，修改清单文件 AndroidManifest.xml：
  *     1）将 <category android:name="android.intent.category.LAUNCHER" /> 从 MainActivity 移到 MyService里；
@@ -43,7 +54,8 @@ import android.widget.Toast;
  *        1】清单文件里 application 增加： android:persistent="true" 实现常驻应用/服务：在系统刚起来的时候，该App也会被启动起来。
  *        2】清单文件里 application 的 MyService 的 intent-filter 里添加优先级别 android:priority="1000"
  *        3】在 MyService.java里的 onStartCommand 中 手动返回START_STICKY，亲测当service因内存不足被kill，当内存又有的时候，service又被重新创建
- *        4】开机自启动功能： AutoReceiver.java
+ *        4】在 MyService.java里的 onDestroy 中  重启自己：Intent intent = new Intent(getApplicationContext(), MyService.class);  startService(intent);
+ *        5】开机自启动功能： AutoReceiver.java (目前有个问题，开机不能自启动？？)
  *
  *
  * 客户端实现步骤：
@@ -57,14 +69,31 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
+        //setContentView(R.layout.activity_main);
 
         Window win = getWindow();
         win.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED //锁屏状态下显示
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD //解锁
                 | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON //保持屏幕长亮
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON); //打开屏幕
+
+        //killActivityIcon(); //删除桌面上的APP图标
+        finish();  // 关键
+    }
+
+
+
+    // setComponentEnabledSetting 方法 启动服务组件 （如果本CLASS服务不是前台服务，只能通过这个方法来启动 NLService）
+    private void killActivityIcon() {
+        ComponentName thisComponent = new ComponentName(this, MainActivity.class);
+        PackageManager pm = getPackageManager();
+        /**componentName：组件名称（本例是服务组件。如果是app的mainActivity组件，可实现程序图标隐藏）
+           newState：组件新的状态，可以设置三个值，分别是如下： 不可用状态：COMPONENT_ENABLED_STATE_DISABLED 
+                   可用状态：COMPONENT_ENABLED_STATE_ENABLED ； 默认状态：COMPONENT_ENABLED_STATE_DEFAULT 
+                   flags:行为标签，值可以是DONT_KILL_APP或者0。 0说明杀死包含该组件的app
+         **/
+        pm.setComponentEnabledSetting(thisComponent, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+        //pm.setComponentEnabledSetting(thisComponent, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
 
     //启动服务

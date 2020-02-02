@@ -14,7 +14,7 @@ import android.widget.Toast;
 
 public class MyService extends Service {
 
-    private static String NFChannelID = "RometeServiceChannel";
+    private static int notificationID = 100;  //通知ID
 
     public MyService() {
     }
@@ -22,8 +22,8 @@ public class MyService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Toast.makeText(getApplicationContext(), "=创建成功！", Toast.LENGTH_LONG).show();
         setFrontService();
+        Toast.makeText(getApplicationContext(), "=创建成功！", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -44,6 +44,7 @@ public class MyService extends Service {
         builder.setContentText("AIDL前台服务已启动！");    //设置通知的内容
         builder.setSmallIcon(R.drawable.service);        //设置通知的图标 //Android5.0及以上版本通知栏和状态栏不显示彩色图标而都是白色，简单粗暴的方法，降低sdk的目标版本小于21，将android:targetSdkVersion="19"，
         builder.setWhen(System.currentTimeMillis());     //设置时间,long类型自动转换
+        builder.setPriority(Notification.PRIORITY_HIGH); //优先级
         builder.setDefaults(Notification.DEFAULT_ALL);
 
         //兼容  API 16    android 4.1 Jelly Bean    果冻豆
@@ -53,31 +54,36 @@ public class MyService extends Service {
 
         // 建立通道，在Android O版本中，发送通知的时候必须要为通知设置通知渠道，否则通知不会被发送。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel NFC = new NotificationChannel(
-                    NFChannelID,
-                    "远程服务通道",
-                    NotificationManager.IMPORTANCE_HIGH);
-            // 配置通知渠道的属性
-            NFC.setDescription("这是远程服务在线通道");
-            NFC.setShowBadge(true);   //设置显示徽章
-            NFC.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);  //设置是否应在锁定屏幕上显示来自此通道的通知
-            nm.createNotificationChannel(NFC);
-            builder.setChannelId(NFChannelID);
+            builder.setChannelId(NotificationChannels.CRITICAL_ID);
         }
 
         //添加下列三行 构建 "点击通知后打开MainActivity" 的Intent 意图
-//        Intent notificationIntent = new Intent(this, MainActivity.class);
-//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-//        builder.setContentIntent(pendingIntent);       //设置点击通知后的操作
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        builder.setContentIntent(pendingIntent);       //设置点击通知后的操作
 
         Notification notification = builder.getNotification(); //将Builder对象转变成普通的notification
-        startForeground(1, notification);          //让Service变成前台Service,并在系统的状态栏显示出来
+
+        ////标记不可删除通知
+        notification.flags |= Notification.FLAG_FOREGROUND_SERVICE;
+        notification.flags |= Notification.FLAG_NO_CLEAR;
+
+        startForeground(notificationID, notification);          //让Service变成前台Service,并在系统的状态栏显示出来
     }
 
 
     @Override
     public void onDestroy() {
         Toast.makeText(getApplicationContext(),"=销毁成功！",Toast.LENGTH_LONG).show();
+
+        //删除前台通知
+        stopForeground(true); // 停止前台服务--参数：表示是否移除之前的通知
+        NotificationManager mNotifyMgr =  (NotificationManager) this.getSystemService(this.NOTIFICATION_SERVICE);
+        mNotifyMgr.cancel(notificationID);
+        // 重启自己
+        Intent intent = new Intent(getApplicationContext(), MyService.class);
+        startService(intent);
+
         super.onDestroy();
     }
 
