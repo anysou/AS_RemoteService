@@ -2,11 +2,13 @@ package com.anysou.as_remoteservice;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -63,13 +65,16 @@ import java.util.List;
  * 二、客户端界面放置 "绑定服务"、“调用服务里的方法”、“解绑服务” 按键。
  * 三、关键点：创建服务器连接类  public ServiceConnection serviceConnection = new ServiceConnection()
  *
+ * https://blog.csdn.net/nuonuonuonuonuo/article/details/90052735
  */
 public class MainActivity extends AppCompatActivity {
+
+    private static SharedPreferences sp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
 
         Window win = getWindow();
         win.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED //锁屏状态下显示
@@ -77,11 +82,17 @@ public class MainActivity extends AppCompatActivity {
                 | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON //保持屏幕长亮
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON); //打开屏幕
 
+        //=== 通过 轻量级的xml存储类 记录数据
+        sp = getSharedPreferences("TEST", Context.MODE_PRIVATE);
+        //sp = getSharedPreferences("TEST", Context.MODE_WORLD_READABLE|Context.MODE_WORLD_WRITEABLE);
+        SharedPreferences.Editor edit = sp.edit();
+        edit.putString("name","my name is anysou");  //通过editor对象写入数据
+        edit.apply();  //提交数据存入到xml文件中
+
+
         //killActivityIcon(); //删除桌面上的APP图标
-        finish();  // 关键
+        //finish();  // 关键
     }
-
-
 
     // setComponentEnabledSetting 方法 启动服务组件 （如果本CLASS服务不是前台服务，只能通过这个方法来启动 NLService）
     private void killActivityIcon() {
@@ -147,9 +158,32 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // 读取存储的数据
+    public void readname(View view) {
+        String name = getString("ok");
+        sendToast("共享获取数据："+name);
+    }
+
+
+    //供Test4调用的静态方法
+    public static String getStaticString(String str,int n){
+        return str+n+readspstatic();
+    }
+    //供Test4调用的非静态方法
+    public String getString(String str){
+        return str+"："+readsp();
+    }
+
+    public String readsp(){
+        return sp.getString("name","没读到");
+    }
+
+    public static String readspstatic(){
+        return sp.getString("name","没读到");
+    }
+
     // 发送给吐司
     private void sendToast(String msg){
         Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();
     }
-
 }
